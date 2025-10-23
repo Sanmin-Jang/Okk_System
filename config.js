@@ -1,7 +1,7 @@
 // config.js
 const CONFIG = {
   // Замените на ваш URL веб-приложения Google Apps Script
-  API_URL: 'https://script.google.com/macros/s/AKfycbwZLTmB2zXGSUxx2d65ks0phxBN92AHI8zgn1QMSAHBTRcDgu6MEPrfYzuUGp-WMAeL/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbzg93-0e8JMUtOKuUwzo9TuR0Q0L0gJHnZhaw6EPkZRr5DpTXd8vM1MS6YVM4EIgxk8/exec',
 
   // Список операторов
   OPERATORS: [
