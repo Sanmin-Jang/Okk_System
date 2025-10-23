@@ -2,7 +2,7 @@
 console.log('🚀 script.js загружен!');
 
 // ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL
-const API_URL = 'https://script.google.com/macros/s/AKfycbwZLTmB2zXGSUxx2d65ks0phxBN92AHI8zgn1QMSAHBTRcDgu6MEPrfYzuUGp-WMAeL/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwNUPGee8tJkEoDBbtWzdUxs8-aWw2hyEtmDas8iK7OFIMLn1rhqrmXr_A1JQOboaua/exec';
 
 class OperatorScoringApp {
     constructor() {
