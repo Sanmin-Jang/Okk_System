@@ -1,495 +1,218 @@
-// script.js
+// script.js - РАБОЧАЯ ВЕРСИЯ
+console.log('🚀 script.js загружен!');
+
+// ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL
+const API_URL = 'https://script.google.com/macros/s/AKfycbwZLTmB2zXGSUxx2d65ks0phxBN92AHI8zgn1QMSAHBTRcDgu6MEPrfYzuUGp-WMAeL/exec';
+
 class OperatorScoringApp {
-  constructor() {
-    this.statsData = {};
-    this.currentRecheckData = null;
-    this.currentOperator = '';
-    this.isLoading = false;
-    this.performanceMetrics = {
-      lastLoadTime: 0,
-      averageLoadTime: 0,
-      loadCount: 0
-    };
+    constructor() {
+        this.init();
+    }
 
-    this.init();
-  }
+    init() {
+        console.log('🔧 Инициализация приложения...');
+        this.setupEventListeners();
+        this.loadData();
+    }
 
-  init() {
-    console.log('Initializing Operator Scoring App...');
-
-    // Установка дат по умолчанию
-    this.setDefaultDates();
-
-    // Заполнение выпадающих списков
-    this.populateOperatorSelects();
-
-    // Загрузка данных
-    this.refreshData();
-    this.loadViolationStats();
-
-    // Настройка обработчиков событий
-    this.setupEventListeners();
-  }
-
-  setDefaultDates() {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-
-    document.getElementById('startDate').valueAsDate = startDate;
-    document.getElementById('endDate').valueAsDate = endDate;
-    document.getElementById('violationStartDate').valueAsDate = startDate;
-    document.getElementById('violationEndDate').valueAsDate = endDate;
-  }
-
-  populateOperatorSelects() {
-    const selects = [
-      'violationOperator',
-      'manualOperatorSelect',
-      'periodOperatorSelect',
-      'recheckOperator'
-    ];
-
-    selects.forEach(selectId => {
-      const select = document.getElementById(selectId);
-      select.innerHTML = selectId === 'violationOperator' ?
-        '<option value="">Все операторы</option>' :
-        '<option value="">Выберите оператора</option>';
-
-      CONFIG.OPERATORS.forEach(operator => {
-        const option = document.createElement('option');
-        option.value = operator;
-        option.textContent = operator;
-        select.appendChild(option);
-      });
-    });
-
-    // Заполнение клиник
-    const clinicSelect = document.getElementById('violationClinic');
-    clinicSelect.innerHTML = '<option value="">Все клиники</option>';
-
-    CONFIG.CLINICS.forEach(clinic => {
-      const option = document.createElement('option');
-      option.value = clinic;
-      option.textContent = clinic;
-      clinicSelect.appendChild(option);
-    });
-  }
-
-  setupEventListeners() {
-    // Автообновление каждые 5 минут
-    setInterval(() => this.refreshData(), 300000);
-  }
-
-  async callGoogleScript(functionName, params = {}) {
-    const url = new URL(CONFIG.API_URL);
-    url.searchParams.set('method', functionName);
-
-    // Добавляем параметры в URL
-    Object.keys(params).forEach(key => {
-      url.searchParams.set(key, params[key]);
-    });
-
-    try {
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+    async loadData() {
+        console.log('📡 Загружаем данные...');
+        
+        this.showLoading();
+        
+        try {
+            // Способ 1: Прямой вызов
+            const data = await this.fetchData();
+            this.displayData(data);
+            
+        } catch (error) {
+            console.error('❌ Ошибка:', error);
+            this.showError(`Не удалось загрузить данные: ${error.message}`);
+        } finally {
+            this.hideLoading();
         }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error calling Google Script:', error);
-      throw error;
-    }
-  }
-
-  async refreshData() {
-    if (this.isLoading) return;
-
-    this.isLoading = true;
-    const startTime = performance.now();
-
-    this.updateUIState('loading', true);
-    this.hideError();
-
-    try {
-      const data = await this.callGoogleScript('getStatsData');
-      const loadTime = performance.now() - startTime;
-
-      this.updatePerformanceMetrics(loadTime);
-      this.updateUI(data);
-      this.isLoading = false;
-      this.updateUIState('loading', false);
-
-    } catch (error) {
-      this.showError(error);
-      this.isLoading = false;
-      this.updateUIState('loading', false);
-    }
-  }
-
-  updateUIState(state, isLoading) {
-    const refreshBtn = document.getElementById('refreshBtn');
-    const loader = document.getElementById('loaderStats');
-
-    if (isLoading) {
-      refreshBtn.disabled = true;
-      loader.style.display = 'block';
-      document.body.classList.add('loading');
-    } else {
-      refreshBtn.disabled = false;
-      loader.style.display = 'none';
-      document.body.classList.remove('loading');
-    }
-  }
-
-  updatePerformanceMetrics(loadTime) {
-    this.performanceMetrics.lastLoadTime = loadTime;
-    this.performanceMetrics.loadCount++;
-    this.performanceMetrics.averageLoadTime =
-      (this.performanceMetrics.averageLoadTime * (this.performanceMetrics.loadCount - 1) + loadTime) /
-      this.performanceMetrics.loadCount;
-
-    document.getElementById('performanceInfo').textContent =
-      `Время загрузки: ${loadTime.toFixed(0)}мс | Среднее: ${this.performanceMetrics.averageLoadTime.toFixed(0)}мс`;
-  }
-
-  updateUI(data) {
-    console.log('Updating UI with data:', data);
-    this.statsData = data;
-
-    const currentStats = data.current || {};
-    this.updateSummaryStats(currentStats, data.todaysPoints || {});
-    this.updateMainTable(currentStats, data.todaysPoints || {});
-    this.updateTopOperators(data.top || []);
-    this.updateLastUpdateTime();
-
-    // Обновляем детальную статистику по листам
-    if (data.detailed) {
-      this.renderSheetStats('z');
-      this.renderSheetStats('diagnostics');
-      this.renderSheetStats('coordinators');
-      this.renderSheetStats('secondary');
-    }
-  }
-
-  updateSummaryStats(currentStats, todaysPoints) {
-    const currentTotal = currentStats.total || currentStats;
-    const currentErrors = currentStats.errors || {};
-    const currentPerfect = currentStats.perfect || {};
-
-    let totalFixations = 0;
-    let operatorsWithActivity = 0;
-    let bestOperator = '-';
-    let maxCount = 0;
-
-    CONFIG.OPERATORS.forEach(operator => {
-      const fixations = currentTotal[operator] || 0;
-      const points = todaysPoints[operator] || 0;
-      const total = fixations + points;
-
-      totalFixations += fixations;
-
-      if (fixations > 0 || points > 0) {
-        operatorsWithActivity++;
-      }
-
-      if (total > maxCount) {
-        maxCount = total;
-        bestOperator = operator;
-      }
-    });
-
-    document.getElementById('totalToday').textContent = totalFixations;
-    document.getElementById('totalOperators').textContent = operatorsWithActivity;
-    document.getElementById('bestOperator').textContent = maxCount > 0 ?
-      `${bestOperator} (${maxCount})` : '-';
-  }
-
-  updateMainTable(currentStats, todaysPoints) {
-    const table = document.getElementById('statsTable').querySelector('tbody');
-    table.innerHTML = '';
-
-    const currentTotal = currentStats.total || currentStats;
-    const currentErrors = currentStats.errors || {};
-    const currentPerfect = currentStats.perfect || {};
-
-    const operatorsData = CONFIG.OPERATORS.map(operator => ({
-      operator,
-      fixations: currentTotal[operator] || 0,
-      points: todaysPoints[operator] || 0,
-      errors: currentErrors[operator] || 0,
-      perfect: currentPerfect[operator] || 0,
-      total: (currentTotal[operator] || 0) + (todaysPoints[operator] || 0)
-    })).sort((a, b) => b.total - a.total);
-
-    operatorsData.forEach(data => {
-      const row = document.createElement('tr');
-      if (data.total === 0) {
-        row.style.opacity = '0.6';
-        row.style.backgroundColor = '#f9f9f9';
-      }
-
-      row.innerHTML = `
-                <td>${this.escapeHtml(data.operator)}</td>
-                <td><strong>${data.total}</strong></td>
-                <td>${data.errors}</td>
-                <td>${data.perfect}</td>
-                <td>${data.points.toFixed(1)}</td>
-            `;
-      table.appendChild(row);
-    });
-  }
-
-  updateTopOperators(topData) {
-    const container = document.getElementById('topOperatorsList');
-    container.innerHTML = '';
-
-    if (topData.length > 0) {
-      const topDiv = document.createElement('div');
-      topDiv.style.background = '#f8f9fa';
-      topDiv.style.padding = '20px';
-      topDiv.style.borderRadius = '8px';
-
-      topData.forEach((item, index) => {
-        const totalPoints = this.statsData.points?.[item.operator] || 0;
-        const fixationsCount = item.count - totalPoints;
-
-        const topItem = document.createElement('div');
-        topItem.className = 'top-item';
-        topItem.innerHTML = `
-                    <div class="rank">${index + 1}</div>
-                    <div>${this.escapeHtml(item.operator)}</div>
-                    <div><strong>${item.count}</strong> (${fixationsCount} фиксаций + ${totalPoints.toFixed(1)} баллов)</div>
-                `;
-        topDiv.appendChild(topItem);
-      });
-
-      container.appendChild(topDiv);
-    } else {
-      container.innerHTML = '<p style="text-align:center;">Нет данных для топа</p>';
-    }
-  }
-
-  updateLastUpdateTime() {
-    const now = new Date();
-    document.getElementById('lastUpdate').textContent =
-      `Последнее обновление: ${now.toLocaleTimeString()}`;
-  }
-
-  renderSheetStats(sheetId) {
-    if (!this.statsData.detailed) return;
-
-    let tableId, data;
-
-    switch(sheetId) {
-      case 'z':
-        tableId = 'zStatsTable';
-        data = this.statsData.detailed.bySheet.z;
-        break;
-      case 'diagnostics':
-        tableId = 'diagnosticsStatsTable';
-        data = this.statsData.detailed.bySheet['диагностика'];
-        break;
-      case 'coordinators':
-        tableId = 'coordinatorsStatsTable';
-        data = this.statsData.detailed.bySheet['координаторы'];
-        break;
-      case 'secondary':
-        tableId = 'secondaryStatsTable';
-        data = this.statsData.detailed.bySheet['вторичка'];
-        break;
-      default:
-        return;
     }
 
-    this.renderSheetTable(tableId, data);
-  }
-
-  renderSheetTable(tableId, data) {
-    const table = document.getElementById(tableId).querySelector('tbody');
-    table.innerHTML = '';
-
-    const operatorsData = CONFIG.OPERATORS.map(operator => ({
-      operator,
-      total: (data && data.total && data.total[operator]) || 0,
-      errors: (data && data.errors && data.errors[operator]) || 0,
-      perfect: (data && data.perfect && data.perfect[operator]) || 0
-    })).sort((a, b) => b.total - a.total);
-
-    operatorsData.forEach(data => {
-      const row = document.createElement('tr');
-      if (data.total === 0) {
-        row.style.opacity = '0.6';
-        row.style.backgroundColor = '#ffffff';
-      }
-
-      row.innerHTML = `
-                <td>${this.escapeHtml(data.operator)}</td>
-                <td><strong>${data.total}</strong></td>
-                <td>${data.errors}</td>
-                <td>${data.perfect}</td>
-            `;
-      table.appendChild(row);
-    });
-  }
-
-  async loadViolationStats() {
-    try {
-      const data = await this.callGoogleScript('getViolationStats');
-      this.updateViolationTable(data);
-    } catch (error) {
-      console.error('Error loading violation stats:', error);
-    }
-  }
-
-  async updateViolationTable() {
-    const periodType = document.getElementById('violationPeriod').value;
-    const operator = document.getElementById('violationOperator').value;
-    const clinic = document.getElementById('violationClinic').value;
-
-    try {
-      let data;
-      if (periodType === 'today') {
-        data = await this.callGoogleScript('getViolationStats', { clinic });
-      } else {
-        const startDate = document.getElementById('violationStartDate').value;
-        const endDate = document.getElementById('violationEndDate').value;
-
-        if (!startDate || !endDate) {
-          alert('Выберите начальную и конечную даты для периода');
-          return;
-        }
-
-        data = await this.callGoogleScript('getViolationStatsForPeriod', {
-          startDate, endDate, clinic
+    async fetchData() {
+        // Создаем URL с параметрами
+        const url = `${API_URL}?method=getStatsData&timestamp=${Date.now()}`;
+        console.log('🔄 Запрос к:', url);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json',
+            }
         });
-      }
-
-      this.renderViolationTable(data, operator, clinic, periodType);
-    } catch (error) {
-      this.showError(error);
-    }
-  }
-
-  renderViolationTable(data, operator, clinic, periodType) {
-    const container = document.getElementById('violationTableContainer');
-
-    if (!data || data.totalRecords === 0) {
-      let message = `Нет данных о нарушениях`;
-      if (clinic) message += ` для клиники "${clinic}"`;
-      if (operator) message += ` и оператора "${operator}"`;
-      container.innerHTML = `<p>${message}</p>`;
-      return;
+        
+        console.log('📨 Ответ получен. Статус:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const text = await response.text();
+        console.log('📝 Текст ответа:', text.substring(0, 200) + '...');
+        
+        return JSON.parse(text);
     }
 
-    // Реализация отображения таблицы нарушений
-    // (аналогично вашему оригинальному коду)
-    container.innerHTML = this.generateViolationHTML(data, operator, clinic, periodType);
-  }
+    displayData(data) {
+        console.log('✅ Данные для отображения:', data);
+        
+        // Очищаем контейнер
+        const container = document.getElementById('statsTable');
+        container.innerHTML = '';
+        
+        if (!data) {
+            container.innerHTML = '<p>Нет данных</p>';
+            return;
+        }
+        
+        // Создаем таблицу
+        let html = `
+            <h2>📊 Статистика операторов</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
+                    <h3>Всего фиксаций</h3>
+                    <div style="font-size: 24px; font-weight: bold;">${data.totalFixationsToday || 0}</div>
+                </div>
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px;">
+                    <h3>Операторов сегодня</h3>
+                    <div style="font-size: 24px; font-weight: bold;">${data.current ? Object.keys(data.current.total || {}).length : 0}</div>
+                </div>
+                <div style="background: #fff3e0; padding: 15px; border-radius: 8px;">
+                    <h3>Топ операторов</h3>
+                    <div style="font-size: 24px; font-weight: bold;">${data.top ? data.top.length : 0}</div>
+                </div>
+            </div>
+        `;
+        
+        // Таблица текущей статистики
+        if (data.current && data.current.total) {
+            html += '<h3>📈 Сегодняшняя статистика</h3>';
+            html += '<table border="1" style="width:100%; border-collapse: collapse;">';
+            html += '<tr style="background: #f5f5f5;"><th>Оператор</th><th>Фиксации</th><th>Ошибки</th><th>Идеально</th><th>Баллы</th></tr>';
+            
+            const operators = Object.keys(data.current.total).sort((a, b) => data.current.total[b] - data.current.total[a]);
+            
+            operators.forEach(operator => {
+                const total = data.current.total[operator] || 0;
+                const errors = data.current.errors?.[operator] || 0;
+                const perfect = data.current.perfect?.[operator] || 0;
+                const points = data.todaysPoints?.[operator] || 0;
+                
+                html += `
+                    <tr>
+                        <td><strong>${this.escapeHtml(operator)}</strong></td>
+                        <td>${total}</td>
+                        <td>${errors}</td>
+                        <td>${perfect}</td>
+                        <td>${points.toFixed(1)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+        }
+        
+        // Топ операторов
+        if (data.top && data.top.length > 0) {
+            html += '<h3>🏆 Топ операторов (все время)</h3>';
+            html += '<table border="1" style="width:100%; border-collapse: collapse;">';
+            html += '<tr style="background: #f5f5f5;"><th>#</th><th>Оператор</th><th>Всего</th><th>Баллы</th></tr>';
+            
+            data.top.forEach((item, index) => {
+                const totalPoints = data.points?.[item.operator] || 0;
+                const fixations = item.count - totalPoints;
+                
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${this.escapeHtml(item.operator)}</strong></td>
+                        <td>${item.count}</td>
+                        <td>${totalPoints.toFixed(1)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+        }
+        
+        container.innerHTML = html;
+        
+        // Обновляем время
+        this.updateLastUpdateTime();
+    }
 
-  generateViolationHTML(data, operator, clinic, periodType) {
-    // Генерация HTML для таблицы нарушений
-    // Верните HTML строку на основе данных
-    return `<h3>Статистика нарушений</h3><p>Данные загружены</p>`;
-  }
+    showLoading() {
+        const container = document.getElementById('statsTable');
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto;"></div>
+                <p>Загрузка данных...</p>
+            </div>
+        `;
+        
+        const btn = document.getElementById('refreshBtn');
+        if (btn) btn.disabled = true;
+    }
 
-  showError(error) {
-    console.error('Error:', error);
-    const errorMessage = document.getElementById('errorMessage');
-    errorMessage.textContent = 'Произошла ошибка: ' + (error.message || error);
-    errorMessage.style.display = 'block';
-  }
+    hideLoading() {
+        const btn = document.getElementById('refreshBtn');
+        if (btn) btn.disabled = false;
+    }
 
-  hideError() {
-    document.getElementById('errorMessage').style.display = 'none';
-  }
+    showError(message) {
+        const container = document.getElementById('statsTable');
+        container.innerHTML = `
+            <div style="background: #ffebee; color: #c62828; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>❌ Ошибка</h3>
+                <p>${message}</p>
+                <button onclick="window.app.loadData()" style="background: #c62828; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                    Попробовать снова
+                </button>
+            </div>
+        `;
+    }
 
-  escapeHtml(unsafe) {
-    return unsafe
-      .toString()
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
+    updateLastUpdateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        console.log('🕐 Время обновления:', timeString);
+    }
 
-  // Методы для работы с перепроверками, периодами и баллами
-  async calculateRechecks() {
-    // Реализация расчета перепроверок
-  }
+    setupEventListeners() {
+        const btn = document.getElementById('refreshBtn');
+        if (btn) {
+            btn.addEventListener('click', () => this.loadData());
+        }
+    }
 
-  async addManualPoints() {
-    // Реализация добавления баллов
-  }
-
-  async deductManualPoints() {
-    // Реализация вычитания баллов
-  }
-
-  async getPeriodStats() {
-    // Реализация получения статистики за период
-  }
+    escapeHtml(unsafe) {
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 }
 
-// Глобальные функции для HTML onclick
-function showSheetTab(sheetId) {
-  document.querySelectorAll('.sheet-content').forEach(tab => {
-    tab.classList.remove('active');
-  });
+// Стили для анимации загрузки
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
 
-  document.querySelectorAll('.sheet-tab').forEach(btn => {
-    btn.classList.remove('active');
-  });
-
-  document.getElementById(sheetId).classList.add('active');
-  event.currentTarget.classList.add('active');
-
-  if (window.app && window.app.statsData.detailed) {
-    window.app.renderSheetStats(sheetId);
-  }
-}
-
-function toggleCustomPeriod() {
-  const periodType = document.getElementById('violationPeriod').value;
-  const customPeriodDiv = document.getElementById('customPeriod');
-  customPeriodDiv.style.display = periodType === 'custom' ? 'block' : 'none';
-}
-
-// Инициализация приложения
+// Запускаем приложение
 document.addEventListener('DOMContentLoaded', function() {
-  window.app = new OperatorScoringApp();
+    console.log('📄 DOM загружен!');
+    window.app = new OperatorScoringApp();
 });
-
-// Глобальные функции
-function refreshData() {
-  if (window.app) window.app.refreshData();
-}
-
-function updateViolationTable() {
-  if (window.app) window.app.updateViolationTable();
-}
-
-function calculateRechecks() {
-  if (window.app) window.app.calculateRechecks();
-}
-
-function addManualPoints() {
-  if (window.app) window.app.addManualPoints();
-}
-
-function deductManualPoints() {
-  if (window.app) window.app.deductManualPoints();
-}
-
-function getPeriodStats() {
-  if (window.app) window.app.getPeriodStats();
-}
