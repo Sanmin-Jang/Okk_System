@@ -3,161 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Скоринг операторов</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Система Окк</title>
+  <style>
+    html, body {
+      margin: 1px;
+      height: 100%;
+      overflow: hidden;
+    }
+    iframe {
+      width: 100%;
+      height: 100vh;
+      border: none;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>Скоринг операторов</h1>
-    <div class="last-update" id="lastUpdate">Последнее обновление: --:--:--</div>
-    <div class="performance-info" id="performanceInfo"></div>
-  </div>
-
-  <div id="errorMessage" class="error" style="display: none;"></div>
-
-  <button class="btn" id="refreshBtn" onclick="refreshData()">Обновить данные</button>
-
-  <div class="stats-container">
-    <div class="stat-card">
-      <h3>Всего фиксаций сегодня</h3>
-      <div class="stat-number" id="totalToday">0</div>
-    </div>
-    <div class="stat-card">
-      <h3>Всего операторов сегодня</h3>
-      <div class="stat-number" id="totalOperators">0</div>
-    </div>
-    <div class="stat-card">
-      <h3>Лучший оператор сегодня</h3>
-      <div class="stat-number" id="bestOperator">-</div>
-    </div>
-  </div>
-
-  <h2>Статистика по операторам (сегодня)</h2>
-  <div id="loaderStats" class="loader" style="display: none;"></div>
-
-  <div class="sheet-tabs">
-    <button class="sheet-tab active" onclick="showSheetTab('total')">Общая</button>
-    <button class="sheet-tab" onclick="showSheetTab('z')">Первичка</button>
-    <button class="sheet-tab" onclick="showSheetTab('diagnostics')">Диагностика</button>
-    <button class="sheet-tab" onclick="showSheetTab('coordinators')">Координаторы</button>
-    <button class="sheet-tab" onclick="showSheetTab('secondary')">Вторичка</button>
-  </div>
-
-  <div id="total" class="sheet-content active">
-    <table id="statsTable">
-      <thead>
-      <tr>
-        <th>Оператор</th>
-        <th>Всего</th>
-        <th>Ошибки</th>
-        <th>Идеально</th>
-        <th>Баллы</th>
-      </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- Остальные таблицы по листам -->
-  <div id="z" class="sheet-content">
-    <div class="stats-detail">
-      <h4>Статистика по листу Первичка</h4>
-      <table class="detail-table" id="zStatsTable">
-        <thead>
-        <tr>
-          <th>Оператор</th>
-          <th>Всего</th>
-          <th>Ошибки</th>
-          <th>Идеально</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Аналогично для других листов -->
-
-  <!-- Блок статистики нарушений -->
-  <h2>Статистика нарушений</h2>
-  <div class="violation-controls">
-    <div>
-      <label>Период:</label>
-      <select id="violationPeriod" onchange="toggleCustomPeriod()">
-        <option value="today">Сегодня</option>
-        <option value="custom">Произвольный период</option>
-      </select>
-    </div>
-
-    <div id="customPeriod" style="display:none;">
-      <label>С:</label>
-      <input type="date" id="violationStartDate" class="date-input">
-      <label>По:</label>
-      <input type="date" id="violationEndDate" class="date-input">
-    </div>
-
-    <div>
-      <label>Оператор:</label>
-      <select id="violationOperator">
-        <option value="">Все операторы</option>
-      </select>
-    </div>
-
-    <div>
-      <label>Клиника:</label>
-      <select id="violationClinic">
-        <option value="">Все клиники</option>
-      </select>
-    </div>
-
-    <button class="btn btn-secondary" onclick="updateViolationTable()">Применить</button>
-  </div>
-
-  <div id="violationTableContainer"></div>
-
-  <!-- Блок перепроверок -->
-  <h2>Учет перепроверки фиксаций</h2>
-  <div class="control-panel">
-    <!-- Форма перепроверок -->
-  </div>
-
-  <!-- Блок периода -->
-  <div class="period-selector">
-    <h3>Топ за период</h3>
-    <div>
-      <label>С:</label>
-      <input type="date" id="startDate" class="date-input">
-      <label>По:</label>
-      <input type="date" id="endDate" class="date-input">
-      <button class="btn btn-secondary" onclick="getPeriodStats()">Показать топ за период</button>
-    </div>
-  </div>
-
-  <div id="periodResult" class="period-result" style="display: none;">
-    <!-- Результаты периода -->
-  </div>
-
-  <!-- Ручное управление баллами -->
-  <div class="points-controls">
-    <h3>Ручное управление баллами</h3>
-    <div class="points-form">
-      <select id="manualOperatorSelect">
-        <option value="">Выберите оператора</option>
-      </select>
-      <input type="number" id="manualPoints" placeholder="Баллы" step="0.1" min="0.1">
-      <input type="text" id="manualReason" placeholder="Причина">
-      <button class="btn btn-secondary" onclick="addManualPoints()">Добавить баллы</button>
-      <button class="btn btn-warning" onclick="deductManualPoints()">Вычесть баллы</button>
-    </div>
-    <div id="manualPointsStatus" class="status-message"></div>
-  </div>
-
-  <h2>ТОП-10 операторов (все время)</h2>
-  <div id="topOperatorsList"></div>
-</div>
-
-<script src="config.js"></script>
-<script src="script.js"></script>
+<iframe
+  src="https://script.google.com/macros/s/AKfycbyiA3mCF9vPJKNeM6XRCRJNgqFAJ5JKk4vPIR13wzqcwtQw2e0GJAY4zizMXvdvvfw/exec"
+></iframe>
 </body>
 </html>
