@@ -45,31 +45,31 @@
   <div class="app-header">
     <div><strong>Система Окк</strong></div>
     <nav class="app-nav">
-      <a href="#" onclick="showPage(event, 'Main')" class="active">Главная</a>
-      <a href="#" onclick="showPage(event, 'Analytics')">Аналитика Диагностики</a>
-      <a href="#" onclick="showPage(event, 'Index')">Скоринг операторов</a>
-      <a href="#" onclick="showPage(event, 'Error')">Аналитика ошибок Первички</a>
+      <a href="#" onclick="showPage('Main')" class="active">Главная</a>
+      <a href="#" onclick="showPage('Analytics')">Аналитика Диагностики</a>
+      <a href="#" onclick="showPage('Index')">Скоринг операторов</a>
+      <a href="#" onclick="showPage('Error')">Аналитика ошибок Первички</a>
     </nav>
   </div>
 
-  <iframe id="contentFrame" src=""></iframe>
+  <iframe id="contentFrame" src="https://script.google.com/macros/s/AKfycbzFGhd3VT_k_QdQnD3M_P_H2sMUaVRWA4evydFSxBq48end9elBo148B6oJ4ioXFQGB/exec"></iframe>
 
   <script>
-    const SCRIPT_URL = 'https://broken-truth-54db.balnuramantai.workers.dev';
-
-    function showPage(event, page) {
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFGhd3VT_k_QdQnD3M_P_H2sMUaVRWA4evydFSxBq48end9elBo148B6oJ4ioXFQGB/exec';
+    
+    function showPage(page) {
       // Обновляем активную ссылку
       document.querySelectorAll('.app-nav a').forEach(a => a.classList.remove('active'));
       event.target.classList.add('active');
       
       // Загружаем страницу в iframe
-      document.getElementById('contentFrame').src = `${SCRIPT_URL}?page=${page}`;
+      document.getElementById('contentFrame').src = SCRIPT_URL + '?page=' + page;
     }
     
     // Загружаем главную страницу по умолчанию
     window.onload = function() {
-      document.getElementById('contentFrame').src = `${SCRIPT_URL}?page=Main`;
+      document.getElementById('contentFrame').src = SCRIPT_URL;
     }
   </script>
 </body>
-</html>
+</html> 
