@@ -21,20 +21,16 @@
 </head>
 <body>
 
-  <iframe id="appFrame"></iframe>
+<iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbyn4-09G7O2nIkfNeJ3lNltGrYs8pjw_o5wH8ukCdtu1IhpKbl3tJa6cj-7Wqu5RDo/exec?page=Main" style="width:100%; height:100%; border:none;"></iframe>
 
-  <script>
-    // Базовая ссылка на Apps Script
-    const baseUrl = "https://script.google.com/macros/s/AKfycby1frHGcMvPC8iro7M7QdG8DV_vojfPwJ5qqDC4LH-OFBtojfr2gOmowRsnmWlVky1F/exec";
+<script>
+window.addEventListener('message', function(event) {
+  if (event.data.page) {
+    document.getElementById('appFrame').src = "https://script.google.com/macros/s/AKfycbyn4-09G7O2nIkfNeJ3lNltGrYs8pjw_o5wH8ukCdtu1IhpKbl3tJa6cj-7Wqu5RDo/exec?page=" + event.data.page;
+  }
+});
+</script>
 
-    // Получаем параметр ?page=...
-    const params = new URLSearchParams(window.location.search);
-    const page = params.get("page") || "Main";
-
-    // Подставляем в iframe
-    const frame = document.getElementById("appFrame");
-    frame.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
-  </script>
 
 </body>
 </html>
