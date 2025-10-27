@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ОКК в iframe</title>
+<title>ОКК Система</title>
 <style>
-  html, body { margin: 0; padding: 0; height: 100%; }
-  iframe { width: 100%; height: 100vh; border: none; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+  iframe { width: 100%; height: 100vh; border: none; display: block; }
 </style>
 </head>
 <body>
@@ -23,88 +23,126 @@
     'ErrorKedmaAstana', 'ErrorKedmaAlmaty', 'ErrorFashionAstana', 'Main'
   ];
 
-  // Начальная страница
-  iframe.src = `${baseUrl}?page=Main`;
-
   // Текущая страница
   let currentPage = 'Main';
 
-  // Функция для навигации
+  // Блокируем window.open глобально
+  const originalWindowOpen = window.open;
+  window.open = function(url, target, features) {
+    console.log('Блокирован window.open:', url);
+    
+    // Если это страница из нашего списка - обрабатываем в iframe
+    if (url && typeof url === 'string') {
+      const foundPage = extractPageFromUrl(url);
+      if (foundPage && pages.includes(foundPage)) {
+        navigateToPage(foundPage);
+        return null; // Блокируем реальное открытие
+      }
+    }
+    
+    // Для других URL можно показать предупреждение или ничего не делать
+    return null; // Полностью блокируем
+  };
+
+  // Функция извлечения страницы из URL
+  function extractPageFromUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.searchParams.get('page');
+    } catch (e) {
+      // Если это не полный URL, ищем прямое совпадение
+      return pages.find(page => url.includes(page));
+    }
+  }
+
+  // Навигация
   function navigateToPage(page) {
     if (pages.includes(page)) {
       currentPage = page;
       iframe.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
+      
+      // Обновляем URL в адресной строке
+      const newUrl = `${window.location.pathname}?page=${page}`;
+      window.history.pushState({}, '', newUrl);
     }
   }
 
-  // Перехват кликов в родительском окне
-  document.addEventListener('click', function(e) {
-    const target = e.target.closest('[data-page], a');
-    if (!target) return;
+  // Агрессивный перехват навигации iframe
+  let isProgrammaticNavigation = false;
 
-    let page = target.getAttribute('data-page') || target.getAttribute('href');
-    if (!page) return;
-
-    // Извлекаем имя страницы из href или data-page
-    const foundPage = pages.find(p => {
-      if (page.startsWith('http')) {
-        // Если это полный URL, ищем параметр page
-        try {
-          const url = new URL(page);
-          const pageParam = url.searchParams.get('page');
-          return pageParam === p;
-        } catch (e) {
-          return page.includes(p);
-        }
+  // Перехватываем изменения src iframe
+  const iframeSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
+  Object.defineProperty(iframe, 'src', {
+    get: function() {
+      return iframeSrcDescriptor.get.call(this);
+    },
+    set: function(value) {
+      if (isProgrammaticNavigation) {
+        // Разрешаем наши изменения
+        iframeSrcDescriptor.set.call(this, value);
       } else {
-        // Если это просто имя страницы
-        return page === p || page.includes(p);
+        // Перехватываем внешние изменения
+        const foundPage = extractPageFromUrl(value);
+        if (foundPage && pages.includes(foundPage)) {
+          isProgrammaticNavigation = true;
+          navigateToPage(foundPage);
+          isProgrammaticNavigation = false;
+        }
+        // Игнорируем другие URL
       }
-    });
-
-    if (foundPage) {
-      e.preventDefault();
-      navigateToPage(foundPage);
     }
   });
 
-  // Перехватываем навигацию iframe
-  let lastSrc = iframe.src;
-  
-  const checkIframeNavigation = setInterval(() => {
+  // Перехватываем загрузку iframe для блокировки _top навигации
+  iframe.addEventListener('load', function() {
     try {
-      const currentSrc = iframe.src;
-      
-      // Если src изменился и это не наш собственный переход
-      if (currentSrc !== lastSrc && !currentSrc.includes(`page=${currentPage}`)) {
-        
-        // Пытаемся извлечь page из нового URL
-        const url = new URL(currentSrc);
-        const newPage = url.searchParams.get('page');
-        
-        if (newPage && pages.includes(newPage)) {
-          // Это валидная страница - разрешаем навигацию
-          currentPage = newPage;
-          lastSrc = currentSrc;
-        } else {
-          // Это невалидная навигация - возвращаем на предыдущую страницу
-          iframe.src = lastSrc;
-        }
-      }
-      
-      lastSrc = iframe.src;
+      // Пытаемся переопределить window.top для iframe
+      iframe.contentWindow.top = window;
     } catch (e) {
-      // Игнорируем ошибки
+      // Игнорируем CORS ошибки
+    }
+  });
+
+  // Мониторим изменения location iframe
+  let lastIframeUrl = '';
+  const navigationMonitor = setInterval(() => {
+    try {
+      const currentUrl = iframe.src;
+      if (currentUrl !== lastIframeUrl && !isProgrammaticNavigation) {
+        const foundPage = extractPageFromUrl(currentUrl);
+        
+        if (foundPage && pages.includes(foundPage)) {
+          // Это наша страница - обновляем состояние
+          currentPage = foundPage;
+          lastIframeUrl = currentUrl;
+        } else if (foundPage) {
+          // Чужой URL - возвращаем назад
+          iframe.src = lastIframeUrl;
+        }
+        
+        lastIframeUrl = iframe.src;
+      }
+    } catch (e) {
+      // Игнорируем CORS ошибки
     }
   }, 100);
 
-  // Обработка кнопок браузера (назад/вперед)
-  window.addEventListener('popstate', function(event) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const page = urlParams.get('page');
-    if (page && pages.includes(page)) {
-      navigateToPage(page);
+  // Блокируем beforeunload если iframe пытается закрыть окно
+  window.addEventListener('beforeunload', function(e) {
+    // Если это не наша инициатива - блокируем
+    if (!isProgrammaticNavigation) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
     }
+  });
+
+  // Инициализация
+  navigateToPage('Main');
+
+  // Очистка при разгрузке страницы
+  window.addEventListener('unload', function() {
+    clearInterval(navigationMonitor);
   });
 </script>
 </body>
