@@ -17,7 +17,6 @@
   const baseUrl = "https://script.google.com/macros/s/AKfycbzU-7LoOARRcgPdAFNeQP24bafaHIjmVLkJNOwdNt713_ALRTgSYJCPmPwXGdCl3qqT/exec";
   const iframe = document.getElementById('appFrame');
 
-  // Список доступных страниц
   const pages = [
     'Control', 'Analytics', 'Index', 'Scoring', 'Operators', 'Clinics',
     'KedmaAstana', 'FashionAstana', 'KedmaAlmaty',
@@ -27,23 +26,86 @@
   // Начальная страница
   iframe.src = `${baseUrl}?page=Main`;
 
-  // Перехват кликов на ссылках или элементах с data-page
+  // Текущая страница
+  let currentPage = 'Main';
+
+  // Функция для навигации
+  function navigateToPage(page) {
+    if (pages.includes(page)) {
+      currentPage = page;
+      iframe.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
+    }
+  }
+
+  // Перехват кликов в родительском окне
   document.addEventListener('click', function(e) {
-    // ищем ближайший элемент с data-page или ссылку
     const target = e.target.closest('[data-page], a');
     if (!target) return;
 
     let page = target.getAttribute('data-page') || target.getAttribute('href');
     if (!page) return;
 
-    // проверяем, есть ли страница в списке
-    page = pages.find(p => page.includes(p));
-    if (!page) return;
+    // Извлекаем имя страницы из href или data-page
+    const foundPage = pages.find(p => {
+      if (page.startsWith('http')) {
+        // Если это полный URL, ищем параметр page
+        try {
+          const url = new URL(page);
+          const pageParam = url.searchParams.get('page');
+          return pageParam === p;
+        } catch (e) {
+          return page.includes(p);
+        }
+      } else {
+        // Если это просто имя страницы
+        return page === p || page.includes(p);
+      }
+    });
 
-    e.preventDefault(); // блокируем обычный переход
-    iframe.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
+    if (foundPage) {
+      e.preventDefault();
+      navigateToPage(foundPage);
+    }
+  });
+
+  // Перехватываем навигацию iframe
+  let lastSrc = iframe.src;
+  
+  const checkIframeNavigation = setInterval(() => {
+    try {
+      const currentSrc = iframe.src;
+      
+      // Если src изменился и это не наш собственный переход
+      if (currentSrc !== lastSrc && !currentSrc.includes(`page=${currentPage}`)) {
+        
+        // Пытаемся извлечь page из нового URL
+        const url = new URL(currentSrc);
+        const newPage = url.searchParams.get('page');
+        
+        if (newPage && pages.includes(newPage)) {
+          // Это валидная страница - разрешаем навигацию
+          currentPage = newPage;
+          lastSrc = currentSrc;
+        } else {
+          // Это невалидная навигация - возвращаем на предыдущую страницу
+          iframe.src = lastSrc;
+        }
+      }
+      
+      lastSrc = iframe.src;
+    } catch (e) {
+      // Игнорируем ошибки
+    }
+  }, 100);
+
+  // Обработка кнопок браузера (назад/вперед)
+  window.addEventListener('popstate', function(event) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page');
+    if (page && pages.includes(page)) {
+      navigateToPage(page);
+    }
   });
 </script>
-
 </body>
 </html>
