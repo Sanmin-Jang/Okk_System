@@ -59,11 +59,24 @@
   <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec?page=Main"></iframe>
 
   <script>
-    const baseUrl = "https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec";
+  const baseUrl = "https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec";
+  const frame = document.getElementById('appFrame');
 
-    function loadPage(pageName) {
-      document.getElementById('appFrame').src = `${baseUrl}?page=${pageName}`;
+  function loadPage(pageName) {
+    frame.src = `${baseUrl}?page=${pageName}`;
+  }
+
+  // 🔹 Слушаем команды от iframe (из Apps Script)
+  window.addEventListener('message', (event) => {
+    // Проверяем, что сообщение пришло из Google Apps Script
+    if (event.origin.includes('script.google.com')) {
+      const { command, page } = event.data || {};
+      if (command === 'navigate' && page) {
+        loadPage(page);
+      }
     }
-  </script>
+  });
+</script>
+
 </body>
 </html>
