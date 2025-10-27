@@ -10,6 +10,7 @@
       padding: 0;
       height: 100%;
       background: #000;
+      overflow: hidden;
     }
     iframe {
       width: 100%;
@@ -20,20 +21,19 @@
 </head>
 <body>
 
-  <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec?page=Main"></iframe>
+  <iframe id="appFrame"></iframe>
 
   <script>
-  const baseUrl = "https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec";
-  const frame = document.getElementById('appFrame');
+    // Базовая ссылка на Apps Script
+    const baseUrl = "https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec";
 
-  // Слушаем команды от iframe (из Apps Script)
-  window.addEventListener('message', (event) => {
-    const { command, page } = event.data || {};
-    if (command === 'navigate' && page) {
-      // Меняем страницу в iframe при получении команды навигации
-      frame.src = `${baseUrl}?page=${page}`;
-    }
-  });
+    // Получаем параметр ?page=...
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get("page") || "Main";
+
+    // Подставляем в iframe
+    const frame = document.getElementById("appFrame");
+    frame.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
   </script>
 
 </body>
