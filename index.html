@@ -9,51 +9,61 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      overflow: hidden;
       background: #000;
+      display: flex;
+      flex-direction: column;
     }
     iframe {
+      flex: 1;
       width: 100%;
-      height: 100%;
       border: none;
+    }
+    .menu {
+      display: flex;
+      flex-wrap: wrap;
+      background: #111;
+      padding: 10px;
+    }
+    .menu button {
+      margin: 5px;
+      padding: 10px 15px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      cursor: pointer;
+    }
+    .menu button:hover {
+      background: #333;
+      border-color: #666;
     }
   </style>
 </head>
 <body>
-  <iframe id="appFrame"></iframe>
+
+  <div class="menu">
+    <button onclick="loadPage('Control')">Control</button>
+    <button onclick="loadPage('Analytics')">Analytics</button>
+    <button onclick="loadPage('Index')">Index</button>
+    <button onclick="loadPage('Scoring')">Scoring</button>
+    <button onclick="loadPage('Operators')">Operators</button>
+    <button onclick="loadPage('Clinics')">Clinics</button>
+    <button onclick="loadPage('KedmaAstana')">KedmaAstana</button>
+    <button onclick="loadPage('FashionAstana')">FashionAstana</button>
+    <button onclick="loadPage('KedmaAlmaty')">KedmaAlmaty</button>
+    <button onclick="loadPage('ErrorKedmaAstana')">ErrorKedmaAstana</button>
+    <button onclick="loadPage('ErrorKedmaAlmaty')">ErrorKedmaAlmaty</button>
+    <button onclick="loadPage('ErrorFashionAstana')">ErrorFashionAstana</button>
+    <button onclick="loadPage('Main')">Main</button>
+  </div>
+
+  <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec?page=Main"></iframe>
 
   <script>
-    // 🔗 Укажи свой Apps Script URL (замени на реальный)
     const baseUrl = "https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec";
 
-    // Все допустимые страницы из Google Apps Script
-    const availablePages = [
-      "Control",
-      "Analytics",
-      "Index",
-      "Scoring",
-      "Operators",
-      "Clinics",
-      "KedmaAstana",
-      "FashionAstana",
-      "KedmaAlmaty",
-      "ErrorKedmaAstana",
-      "ErrorKedmaAlmaty",
-      "ErrorFashionAstana",
-      "Main"
-    ];
-
-    // Читаем параметр ?page= из URL GitHub
-    const params = new URLSearchParams(window.location.search);
-    let page = params.get("page");
-
-    // Проверяем — если страница не существует, открываем Main
-    if (!availablePages.includes(page)) {
-      page = "Main";
+    function loadPage(pageName) {
+      document.getElementById('appFrame').src = `${baseUrl}?page=${pageName}`;
     }
-
-    // Загружаем нужную страницу Google Apps Script в iframe
-    document.getElementById("appFrame").src = `${baseUrl}?page=${page}`;
   </script>
 </body>
 </html>
