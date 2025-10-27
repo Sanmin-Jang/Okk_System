@@ -10,51 +10,15 @@
       padding: 0;
       height: 100%;
       background: #000;
-      display: flex;
-      flex-direction: column;
     }
     iframe {
-      flex: 1;
       width: 100%;
+      height: 100%;
       border: none;
-    }
-    .menu {
-      display: flex;
-      flex-wrap: wrap;
-      background: #111;
-      padding: 10px;
-    }
-    .menu button {
-      margin: 5px;
-      padding: 10px 15px;
-      background: #222;
-      color: #fff;
-      border: 1px solid #444;
-      cursor: pointer;
-    }
-    .menu button:hover {
-      background: #333;
-      border-color: #666;
     }
   </style>
 </head>
 <body>
-
-  <div class="menu">
-    <button onclick="loadPage('Control')">Control</button>
-    <button onclick="loadPage('Analytics')">Analytics</button>
-    <button onclick="loadPage('Index')">Index</button>
-    <button onclick="loadPage('Scoring')">Scoring</button>
-    <button onclick="loadPage('Operators')">Operators</button>
-    <button onclick="loadPage('Clinics')">Clinics</button>
-    <button onclick="loadPage('KedmaAstana')">KedmaAstana</button>
-    <button onclick="loadPage('FashionAstana')">FashionAstana</button>
-    <button onclick="loadPage('KedmaAlmaty')">KedmaAlmaty</button>
-    <button onclick="loadPage('ErrorKedmaAstana')">ErrorKedmaAstana</button>
-    <button onclick="loadPage('ErrorKedmaAlmaty')">ErrorKedmaAlmaty</button>
-    <button onclick="loadPage('ErrorFashionAstana')">ErrorFashionAstana</button>
-    <button onclick="loadPage('Main')">Main</button>
-  </div>
 
   <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec?page=Main"></iframe>
 
@@ -62,21 +26,15 @@
   const baseUrl = "https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec";
   const frame = document.getElementById('appFrame');
 
-  function loadPage(pageName) {
-    frame.src = `${baseUrl}?page=${pageName}`;
-  }
-
-  // 🔹 Слушаем команды от iframe (из Apps Script)
+  // Слушаем команды от iframe (из Apps Script)
   window.addEventListener('message', (event) => {
-    // Проверяем, что сообщение пришло из Google Apps Script
-    if (event.origin.includes('script.google.com')) {
-      const { command, page } = event.data || {};
-      if (command === 'navigate' && page) {
-        loadPage(page);
-      }
+    const { command, page } = event.data || {};
+    if (command === 'navigate' && page) {
+      // Меняем страницу в iframe при получении команды навигации
+      frame.src = `${baseUrl}?page=${page}`;
     }
   });
-</script>
+  </script>
 
 </body>
 </html>
