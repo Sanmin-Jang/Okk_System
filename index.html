@@ -5,81 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Система Окк</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 0; 
-      padding: 0; 
-      background-color: #f8f9fa; 
-    }
-    .app-header { 
-      background-color: #007bff; 
-      color: white; 
-      padding: 15px 25px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-    }
-    .app-nav a { 
-      color: white; 
-      text-decoration: none; 
-      margin-left: 20px; 
-      font-weight: bold; 
-      padding: 8px 16px; 
-      border-radius: 4px; 
-      transition: background-color 0.3s; 
-    }
-    .app-nav a:hover { 
-      background-color: rgba(255,255,255,0.2); 
-    }
-    .app-nav a.active { 
-      background-color: rgba(255,255,255,0.3); 
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
     }
     iframe {
       width: 100%;
-      height: calc(100vh - 70px);
+      height: 100%;
       border: none;
     }
   </style>
 </head>
 <body>
-  <div class="app-header">
-    <div><strong>Система Окк</strong></div>
-    <nav class="app-nav" id="dynamicNav">
-      <!-- Меню будет загружено динамически из Google Apps Script -->
-    </nav>
-  </div>
-
-  <iframe id="contentFrame" src="https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec"></iframe>
+  <iframe id="appFrame"></iframe>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec';
-    
-    // Функция для загрузки меню
-    function loadNavigation() {
-      fetch(SCRIPT_URL + '?action=getNavigation')
-        .then(response => response.text())
-        .then(html => {
-          document.getElementById('dynamicNav').innerHTML = html;
-        })
-        .catch(error => {
-          console.error('Ошибка загрузки меню:', error);
-        });
-    }
-    
-    function showPage(page) {
-      // Загружаем страницу в iframe
-      document.getElementById('contentFrame').src = SCRIPT_URL + '?page=' + page;
-      
-      // Обновляем активную ссылку
-      document.querySelectorAll('.app-nav a').forEach(a => a.classList.remove('active'));
-      event.target.classList.add('active');
-    }
-    
-    // Загружаем меню при загрузке страницы
-    window.onload = function() {
-      loadNavigation();
-      document.getElementById('contentFrame').src = SCRIPT_URL;
-    }
+    // 🔗 Базовый URL твоего Google Apps Script
+    const baseUrl = "https://script.google.com/macros/s/AKfycbwRiFVr9P0429jojatmZ_Eyke0YhZC8Ly34n9Cwv5Rw5RWhposjVGXLkb9QPjdgiSDc/exec";
+
+    // 🔍 Проверяем параметр ?page= в ссылке GitHub
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get("page") || "Main";
+
+    // 🧭 Загружаем нужную страницу в iframe
+    document.getElementById("appFrame").src = `${baseUrl}?page=${page}`;
   </script>
 </body>
 </html>
