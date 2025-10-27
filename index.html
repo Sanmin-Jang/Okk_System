@@ -10,6 +10,7 @@
       padding: 0;
       height: 100%;
       overflow: hidden;
+      background: #000;
     }
     iframe {
       width: 100%;
@@ -22,14 +23,36 @@
   <iframe id="appFrame"></iframe>
 
   <script>
-    // 🔗 Базовый URL твоего Google Apps Script
+    // 🔗 Укажи свой Apps Script URL (замени на реальный)
     const baseUrl = "https://script.google.com/macros/s/AKfycbwRiFVr9P0429jojatmZ_Eyke0YhZC8Ly34n9Cwv5Rw5RWhposjVGXLkb9QPjdgiSDc/exec";
 
-    // 🔍 Проверяем параметр ?page= в ссылке GitHub
-    const params = new URLSearchParams(window.location.search);
-    const page = params.get("page") || "Main";
+    // Все допустимые страницы из Google Apps Script
+    const availablePages = [
+      "Control",
+      "Analytics",
+      "Index",
+      "Scoring",
+      "Operators",
+      "Clinics",
+      "KedmaAstana",
+      "FashionAstana",
+      "KedmaAlmaty",
+      "ErrorKedmaAstana",
+      "ErrorKedmaAlmaty",
+      "ErrorFashionAstana",
+      "Main"
+    ];
 
-    // 🧭 Загружаем нужную страницу в iframe
+    // Читаем параметр ?page= из URL GitHub
+    const params = new URLSearchParams(window.location.search);
+    let page = params.get("page");
+
+    // Проверяем — если страница не существует, открываем Main
+    if (!availablePages.includes(page)) {
+      page = "Main";
+    }
+
+    // Загружаем нужную страницу Google Apps Script в iframe
     document.getElementById("appFrame").src = `${baseUrl}?page=${page}`;
   </script>
 </body>
