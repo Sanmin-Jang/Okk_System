@@ -1,36 +1,48 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Система Окк</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #000;
-      overflow: hidden;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ОКК в iframe</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; }
+  iframe { width: 100%; height: 100vh; border: none; }
+</style>
 </head>
 <body>
 
-<iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbyn4-09G7O2nIkfNeJ3lNltGrYs8pjw_o5wH8ukCdtu1IhpKbl3tJa6cj-7Wqu5RDo/exec?page=Main" style="width:100%; height:100%; border:none;"></iframe>
+<iframe id="appFrame" src=""></iframe>
 
 <script>
-window.addEventListener('message', function(event) {
-  if (event.data.page) {
-    document.getElementById('appFrame').src = "https://script.google.com/macros/s/AKfycbyn4-09G7O2nIkfNeJ3lNltGrYs8pjw_o5wH8ukCdtu1IhpKbl3tJa6cj-7Wqu5RDo/exec?page=" + event.data.page;
-  }
-});
-</script>
+  const baseUrl = "https://script.google.com/macros/s/AKfycby1frHGcMvPC8iro7M7QdG8DV_vojfPwJ5qqDC4LH-OFBtojfr2gOmowRsnmWlVky1F/exec";
+  const iframe = document.getElementById('appFrame');
 
+  // Список доступных страниц
+  const pages = [
+    'Control', 'Analytics', 'Index', 'Scoring', 'Operators', 'Clinics',
+    'KedmaAstana', 'FashionAstana', 'KedmaAlmaty',
+    'ErrorKedmaAstana', 'ErrorKedmaAlmaty', 'ErrorFashionAstana', 'Main'
+  ];
+
+  // Начальная страница
+  iframe.src = `${baseUrl}?page=Main`;
+
+  // Перехват всех кликов на ссылках
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest('a');
+    if (!target) return;
+
+    const href = target.getAttribute('href');
+    if (!href) return;
+
+    // Проверяем, есть ли в href одна из страниц
+    const page = pages.find(p => href.includes(p));
+    if (page) {
+      e.preventDefault();
+      iframe.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
+    }
+  });
+</script>
 
 </body>
 </html>
