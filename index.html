@@ -27,20 +27,21 @@
   // Начальная страница
   iframe.src = `${baseUrl}?page=Main`;
 
-  // Перехват всех кликов на ссылках
+  // Перехват кликов на ссылках или элементах с data-page
   document.addEventListener('click', function(e) {
-    const target = e.target.closest('a');
+    // ищем ближайший элемент с data-page или ссылку
+    const target = e.target.closest('[data-page], a');
     if (!target) return;
 
-    const href = target.getAttribute('href');
-    if (!href) return;
+    let page = target.getAttribute('data-page') || target.getAttribute('href');
+    if (!page) return;
 
-    // Проверяем, есть ли в href одна из страниц
-    const page = pages.find(p => href.includes(p));
-    if (page) {
-      e.preventDefault();
-      iframe.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
-    }
+    // проверяем, есть ли страница в списке
+    page = pages.find(p => page.includes(p));
+    if (!page) return;
+
+    e.preventDefault(); // блокируем обычный переход
+    iframe.src = `${baseUrl}?page=${encodeURIComponent(page)}`;
   });
 </script>
 
