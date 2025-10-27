@@ -44,11 +44,8 @@
 <body>
   <div class="app-header">
     <div><strong>Система Окк</strong></div>
-    <nav class="app-nav">
-      <a href="#" onclick="showPage('Main')" class="active">Главная</a>
-      <a href="#" onclick="showPage('Analytics')">Аналитика Диагностики</a>
-      <a href="#" onclick="showPage('Index')">Скоринг операторов</a>
-      <a href="#" onclick="showPage('Error')">Аналитика ошибок Первички</a>
+    <nav class="app-nav" id="dynamicNav">
+      <!-- Меню будет загружено динамически из Google Apps Script -->
     </nav>
   </div>
 
@@ -57,19 +54,32 @@
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7tvIMd1gJl6jUNs0r9x55SDUv4YVpzn51Ir32kmg/exec';
     
+    // Функция для загрузки меню
+    function loadNavigation() {
+      fetch(SCRIPT_URL + '?action=getNavigation')
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('dynamicNav').innerHTML = html;
+        })
+        .catch(error => {
+          console.error('Ошибка загрузки меню:', error);
+        });
+    }
+    
     function showPage(page) {
+      // Загружаем страницу в iframe
+      document.getElementById('contentFrame').src = SCRIPT_URL + '?page=' + page;
+      
       // Обновляем активную ссылку
       document.querySelectorAll('.app-nav a').forEach(a => a.classList.remove('active'));
       event.target.classList.add('active');
-      
-      // Загружаем страницу в iframe
-      document.getElementById('contentFrame').src = SCRIPT_URL + '?page=' + page;
     }
     
-    // Загружаем главную страницу по умолчанию
+    // Загружаем меню при загрузке страницы
     window.onload = function() {
+      loadNavigation();
       document.getElementById('contentFrame').src = SCRIPT_URL;
     }
   </script>
 </body>
-</html> 
+</html>
